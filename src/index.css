@@ -712,7 +712,7 @@ label {
 .ticker-track {
   display: flex;
   gap: 16px;
-  animation: ticker-scroll 30s linear infinite;
+  animation: ticker-scroll 120s linear infinite;
   width: max-content;
 }
 .ticker-track:hover {

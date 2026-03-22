@@ -17,8 +17,17 @@ export default function Home() {
 
   const loadTrending = async () => {
     try {
-      const data = await getTopCoins(15);
-      setTrendingCoins(data);
+      const data = await getTopCoins(50); // Fetch top 50 to have a wider pool of gainers
+      
+      // Filter out stablecoins so they don't appear in recommendations
+      const stablecoins = ['usdt', 'usdc', 'dai', 'fdusd', 'usde', 'usdd', 'frax', 'tusd', 'pyusd', 'usds', 'eurc'];
+      const filteredCoins = data.filter(coin => 
+        !stablecoins.includes(coin.symbol.toLowerCase()) &&
+        coin.price_change_percentage_24h != null &&
+        coin.current_price != null
+      );
+      
+      setTrendingCoins(filteredCoins);
       setLastUpdated(new Date());
     } catch (e) {
       console.error('Failed to load trending coins:', e);
@@ -33,8 +42,14 @@ export default function Home() {
     { label: 'Active Alerts', value: '3', change: 'Notifications', positive: true, type: 'amber' },
   ];
 
-  const formatPrice = (p) => p >= 1 ? `$${p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$${p.toPrecision(4)}`;
-  const formatChange = (c) => c >= 0 ? `+${c.toFixed(2)}%` : `${c.toFixed(2)}%`;
+  const formatPrice = (p) => {
+    if (p == null) return '$0.00';
+    return p >= 1 ? `$${p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$${p.toPrecision(4)}`;
+  };
+  const formatChange = (c) => {
+    if (c == null) return '0.00%';
+    return c >= 0 ? `+${c.toFixed(2)}%` : `${c.toFixed(2)}%`;
+  };
 
   // Duplicate for seamless scroll
   const tickerCoins = [...trendingCoins, ...trendingCoins];
@@ -58,14 +73,14 @@ export default function Home() {
           <div className="ticker-container">
             <div className="ticker-track">
               {tickerCoins.map((coin, i) => (
-                <div key={`${coin.id}-${i}`} className="ticker-coin">
+                <a key={`${coin.id}-${i}`} href={`https://www.coingecko.com/en/coins/${coin.id}`} target="_blank" rel="noopener noreferrer" className="ticker-coin" style={{ textDecoration: 'none' }}>
                   <img src={coin.image} alt={coin.symbol} style={{ width: 20, height: 20, borderRadius: '50%' }} />
                   <span className="ticker-coin-symbol">{coin.symbol?.toUpperCase()}</span>
                   <span className="ticker-coin-price">{formatPrice(coin.current_price)}</span>
                   <span className={`ticker-coin-change ${coin.price_change_percentage_24h >= 0 ? 'up' : 'down'}`}>
                     {formatChange(coin.price_change_percentage_24h)}
                   </span>
-                </div>
+                </a>
               ))}
             </div>
           </div>
@@ -131,9 +146,15 @@ export default function Home() {
                 </div>
               </div>
               
-              <button className="btn btn-primary" style={{ width: '100%', padding: '8px', fontSize: '0.9rem', marginTop: 8 }}>
-                Trade Now
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                <span>24h Volume:</span>
+                <span style={{ fontWeight: 600 }}>{formatPrice(coin.total_volume)}</span>
+              </div>
+              
+              <a href={`https://www.coingecko.com/en/coins/${coin.id}`} target="_blank" rel="noopener noreferrer" 
+                 className="btn btn-primary" style={{ width: '100%', padding: '8px', fontSize: '0.9rem', marginTop: 8, textAlign: 'center', textDecoration: 'none' }}>
+                See Details
+              </a>
             </div>
           ))}
       </div>

@@ -1,6 +1,6 @@
 // src/services/api.js — CoinGecko API Service with caching
 const BASE_URL = '/api/coingecko';
-const CACHE_TTL = 60 * 1000; // 1 minute cache
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache to prevent 429 Too Many Requests
 
 const cache = {};
 
@@ -45,10 +45,11 @@ export async function getCoinPrices(coinIds = ['bitcoin', 'ethereum', 'solana'])
  * Get historical market chart data (price over time)
  * @param {string} coinId — e.g. 'bitcoin'
  * @param {number} days — e.g. 30
+ * @param {string} currency — 'usd' or 'idr'
  */
-export async function getCoinChart(coinId = 'bitcoin', days = 30) {
-  const url = `${BASE_URL}/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`;
-  return fetchWithCache(url, `chart_${coinId}_${days}`);
+export async function getCoinChart(coinId = 'bitcoin', days = 30, currency = 'usd') {
+  const url = `${BASE_URL}/coins/${coinId}/market_chart?vs_currency=${currency}&days=${days}`;
+  return fetchWithCache(url, `chart_${coinId}_${days}_${currency}`);
 }
 
 /**
