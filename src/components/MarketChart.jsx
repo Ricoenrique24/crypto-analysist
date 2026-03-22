@@ -1,4 +1,5 @@
 // src/components/MarketChart.jsx
+import React from 'react';
 import { Line } from 'react-chartjs-2';
 import { calculateSMA, calculateEMA, calculateRSI, calculateMACD } from '../utils/calculations';
 import Chart from 'chart.js/auto';

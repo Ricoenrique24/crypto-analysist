@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { FaPlay, FaChartLine, FaSpinner, FaCheck } from 'react-icons/fa';
 import { getCoinChart, COIN_LIST } from '../services/api';
 
@@ -13,6 +13,7 @@ export default function DCAStrategy() {
   
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
+  const resultsRef = useRef(null);
 
   const toggleCoin = (id) => {
     setSelectedCoins(prev => {
@@ -157,6 +158,11 @@ export default function DCAStrategy() {
         coinBreakdown
       });
 
+      // Auto-scroll to results after a short render delay
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+
     } catch (e) {
       console.error('DCA Engine Error:', e);
       alert('Simulation failed. Either the API Rate Limit was reached or the network failed. Please wait a minute and try again.');
@@ -174,7 +180,7 @@ export default function DCAStrategy() {
   const currentTotalAllocation = Object.values(allocations).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+    <div className="glass-card" style={{ padding: 0 }}>
       <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 10 }}>
         <FaChartLine style={{ color: 'var(--accent-blue-light)' }} />
         <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Intelligent DCA Backtest Engine</h3>
@@ -322,7 +328,7 @@ export default function DCAStrategy() {
 
         {/* Results */}
         {results && (
-          <div className="animate-fade-in-up" style={{ marginTop: 8, borderTop: '1px solid var(--border-subtle)', paddingTop: 32 }}>
+          <div ref={resultsRef} className="animate-fade-in-up" style={{ marginTop: 8, borderTop: '1px solid var(--border-subtle)', paddingTop: 32 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                <h4 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Simulation Results</h4>
                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Analyzed {results.totalBuyPeriods} purchase periods across {results.coinBreakdown.length} assets.</span>

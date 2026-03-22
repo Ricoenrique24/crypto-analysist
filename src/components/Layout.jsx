@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { FaChartLine, FaWallet, FaCalculator, FaBell, FaBars, FaTimes } from 'react-icons/fa';

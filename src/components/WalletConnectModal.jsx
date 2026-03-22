@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { FaWallet, FaExchangeAlt, FaTimes } from 'react-icons/fa';
 
 export default function WalletConnectModal({ isOpen, onClose }) {

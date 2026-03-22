@@ -1,8 +1,9 @@
 // src/services/api.js — CoinGecko API Service with caching
 const BASE_URL = '/api/coingecko';
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache to prevent 429 Too Many Requests
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes cache to prevent 429 Too Many Requests
 
 const cache = {};
+let rateLimitedUntil = 0; // Global backoff timestamp
 
 async function fetchWithCache(url, cacheKey) {
   const cached = cache[cacheKey];
@@ -10,8 +11,21 @@ async function fetchWithCache(url, cacheKey) {
     return cached.data;
   }
 
+  // If we're still in a rate-limit backoff window, return cached or skip
+  if (Date.now() < rateLimitedUntil) {
+    if (cached) return cached.data;
+    throw new Error('Rate limited — waiting before retrying');
+  }
+
   try {
     const res = await fetch(url);
+    if (res.status === 429) {
+      // Back off for 60 seconds on 429
+      rateLimitedUntil = Date.now() + 60 * 1000;
+      console.warn(`Rate limited. Backing off for 60s.`);
+      if (cached) return cached.data;
+      throw new Error('API rate limited (429)');
+    }
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     const data = await res.json();
     cache[cacheKey] = { data, timestamp: Date.now() };
@@ -50,6 +64,52 @@ export async function getCoinPrices(coinIds = ['bitcoin', 'ethereum', 'solana'])
 export async function getCoinChart(coinId = 'bitcoin', days = 30, currency = 'usd') {
   const url = `${BASE_URL}/coins/${coinId}/market_chart?vs_currency=${currency}&days=${days}`;
   return fetchWithCache(url, `chart_${coinId}_${days}_${currency}`);
+}
+
+/**
+ * Build OHLC candles from a prices array [[timestamp, price], ...]
+ * Groups prices into buckets of `candleMs` milliseconds
+ */
+function buildOHLCFromPrices(prices, candleMs) {
+  if (!prices || prices.length === 0) return [];
+  const candles = [];
+  let bucketStart = prices[0][0];
+  let open = prices[0][1], high = open, low = open, close = open;
+
+  for (let i = 1; i < prices.length; i++) {
+    const [ts, price] = prices[i];
+    if (ts - bucketStart >= candleMs) {
+      candles.push([bucketStart, open, high, low, close]);
+      bucketStart = ts;
+      open = price; high = price; low = price; close = price;
+    } else {
+      high = Math.max(high, price);
+      low = Math.min(low, price);
+      close = price;
+    }
+  }
+  candles.push([bucketStart, open, high, low, close]); // last candle
+  return candles;
+}
+
+/**
+ * Get OHLC data for a specific coin.
+ * Uses native OHLC endpoint for short durations (≤30 days),
+ * and constructs candles from market_chart for longer durations
+ * to avoid CoinGecko free-tier OHLC data limitations.
+ */
+export async function getCoinOHLC(coinId = 'bitcoin', days = 30, currency = 'usd') {
+  if (days <= 30) {
+    // Native OHLC endpoint works well for short durations
+    const url = `${BASE_URL}/coins/${coinId}/ohlc?vs_currency=${currency}&days=${days}`;
+    return fetchWithCache(url, `ohlc_${coinId}_${days}_${currency}`);
+  }
+  // For longer durations, build OHLC from market_chart prices
+  const chartData = await getCoinChart(coinId, days, currency);
+  // Choose candle interval based on duration
+  const candleHours = days <= 90 ? 8 : days <= 180 ? 24 : 48; // 8h, 1day, or 2day candles
+  const candleMs = candleHours * 60 * 60 * 1000;
+  return buildOHLCFromPrices(chartData.prices, candleMs);
 }
 
 /**

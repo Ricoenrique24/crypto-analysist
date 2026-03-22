@@ -1,3 +1,4 @@
+import React from 'react';
 import DCAStrategy from '../components/DCAStrategy';
 import { FaCalculator } from 'react-icons/fa';
 
