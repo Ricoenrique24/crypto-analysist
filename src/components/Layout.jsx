@@ -1,10 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { FaChartLine, FaWallet, FaCalculator, FaBell, FaBars, FaTimes } from 'react-icons/fa';
+import WalletConnectModal from './WalletConnectModal';
 
 export default function Layout({ children }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
   const navLinks = [
     { name: 'Dashboard', path: '/', icon: <FaChartLine /> },
@@ -79,7 +81,7 @@ export default function Layout({ children }) {
               alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-fast)',
             }}><FaBell size={14} /></button>
 
-            <button className="desktop-nav" style={{
+            <button className="desktop-nav" onClick={() => setIsWalletModalOpen(true)} style={{
               padding: '9px 20px', borderRadius: 'var(--radius-full)',
               background: 'var(--gradient-primary)', color: 'white', border: 'none',
               fontWeight: 600, fontSize: '0.8125rem', cursor: 'pointer',
@@ -192,6 +194,8 @@ export default function Layout({ children }) {
           );
         })}
       </nav>
+
+      <WalletConnectModal isOpen={isWalletModalOpen} onClose={() => setIsWalletModalOpen(false)} />
     </div>
   );
 }

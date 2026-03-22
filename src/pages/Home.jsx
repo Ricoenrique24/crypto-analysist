@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import PortfolioTracker from '../components/PortfolioTracker';
 import FCMAlerts from '../components/FCMAlerts';
-import { FaArrowUp, FaClock } from 'react-icons/fa';
+import { FaArrowUp, FaClock, FaStar, FaFire } from 'react-icons/fa';
 import { getTopCoins } from '../services/api';
 
 export default function Home() {
@@ -91,23 +91,51 @@ export default function Home() {
           marginBottom: 8,
           background: 'linear-gradient(135deg, var(--text-primary), var(--accent-blue-light))',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>Dashboard Overview</h1>
+        }}>Smart Recommendations</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>
-          Welcome back! Here's a summary of your tracked assets and recent market movements.
+          Algorithmically chosen top coins based on trend and 24h performance.
         </p>
       </div>
 
-      {/* Stat Cards */}
+      {/* Recommended Coins (Top 3) */}
       <div className="grid grid-3 stagger-children">
-        {stats.map((s, i) => (
-          <div key={i} className={`stat-card ${s.type} animate-fade-in-up`}>
-            <div className="stat-label">{s.label}</div>
-            <div className="stat-value">{s.value}</div>
-            <div className={`stat-change ${s.positive ? 'positive' : 'negative'}`}>
-              {s.positive && <FaArrowUp size={10} />} {s.change}
+        {trendingCoins
+          .sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h)
+          .slice(0, 3)
+          .map((coin, i) => (
+            <div key={`rec-${coin.id}`} className={`stat-card green animate-fade-in-up`} style={{
+              display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', overflow: 'hidden'
+            }}>
+              {i === 0 && <div style={{
+                position: 'absolute', top: 0, right: 0, background: 'var(--gradient-primary)',
+                padding: '4px 12px', fontSize: '0.7rem', fontWeight: 700,
+                borderBottomLeftRadius: 'var(--radius-md)', color: '#fff',
+                display: 'flex', alignItems: 'center', gap: 4
+              }}><FaFire /> Top Pick</div>}
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <img src={coin.image} alt={coin.symbol} style={{ width: 36, height: 36, borderRadius: '50%' }} />
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, textTransform: 'uppercase', margin: 0 }}>{coin.symbol}</h3>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{coin.name}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 2 }}>Current Price</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{formatPrice(coin.current_price)}</div>
+                </div>
+                <div className={`stat-change positive`} style={{ fontSize: '1rem', padding: '4px 8px' }}>
+                  <FaArrowUp size={12} /> {formatChange(coin.price_change_percentage_24h)}
+                </div>
+              </div>
+              
+              <button className="btn btn-primary" style={{ width: '100%', padding: '8px', fontSize: '0.9rem', marginTop: 8 }}>
+                Trade Now
+              </button>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
 
       {/* Main Content Grid */}
